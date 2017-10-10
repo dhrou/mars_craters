@@ -6,28 +6,6 @@ from .detection_base import DetectionBaseScoreType
 from .precision_recall import _match_tuples
 
 
-def score_craters_on_patch(y_true, y_pred, cut_off=1, minipatch=None):
-    """
-    Main OSPA score for single patch.
-
-    Parameters
-    ----------
-    y_true : list of tuples (x, y, radius)
-        List of coordinates and radius of actual craters in a patch
-    y_pred : list of tuples (x, y, radius)
-        List of coordinates and radius of craters predicted in the patch
-
-    Returns
-    -------
-    float : score for a given path, the lower the better
-
-    """
-    y_true = np.atleast_2d(y_true).T
-    y_pred = np.atleast_2d(y_pred).T
-    score = ospa_single(y_true, y_pred, cut_off=cut_off, minipatch=minipatch)
-    return score
-
-
 def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
     """
     OSPA score on single patch. See docstring of `ospa` for more info.
@@ -46,45 +24,31 @@ def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
     float: distance between input arrays
 
     """
-    x_size = y_true.size
-    y_size = y_pred.size
+    n_true = len(y_true)
+    n_pred = len(y_pred)
 
-    _, m = y_true.shape
-    _, n = y_pred.shape
+    n_max = max(n_true, n_pred)
+    n_min = min(n_true, n_pred)
 
-    if m > n:
-        return ospa_single(y_pred, y_true, cut_off, minipatch)
+    # if m > n:
+        # return ospa_single(y_pred, y_true, cut_off, minipatch)
 
-    # NO CRATERS
-    # ----------
-    # GOOD MATCH
-    if x_size == 0 and y_size == 0:
+    # No craters and none found
+    if n_true == 0 and n_pred == 0:
         return 0
 
-    # BAD MATCH
-    if x_size == 0 or y_size == 0:
+    # No craters and some found or existing craters but non found
+    if n_true == 0 or n_pred == 0:
         return cut_off
 
-    # minipatch cuts
-    if minipatch is not None:
-        row_min, row_max, col_min, col_max = minipatch
-
-        y_true_cut = ((y_true[0] >= col_min) & (y_true[0] < col_max) &
-                      (y_true[1] >= row_min) & (y_true[1] < row_max))
-        y_pred_cut = ((y_pred[0] >= col_min) & (y_pred[0] < col_max) &
-                      (y_pred[1] >= row_min) & (y_pred[1] < row_max))
-
-        y_true = y_true[y_true_cut]
-        y_pred = y_pred[y_pred_cut]
-
     # OSPA METRIC
-    _, _, ious = _match_tuples(y_true.T.tolist(), y_pred.T.tolist())
+    id_true, id_pred, ious = _match_tuples(y_true, y_pred)
     iou_score = ious.sum()
 
-    distance_score = m - iou_score
-    cardinality_score = cut_off * (n - m)
+    distance_score = n_min - iou_score
+    cardinality_score = cut_off * (n_max - n_min)
 
-    dist = 1 / n * (distance_score + cardinality_score)
+    dist = 1 / n_max * (distance_score + cardinality_score)
 
     return dist
 
@@ -126,7 +90,7 @@ class OSPA(DetectionBaseScoreType):
         http://www.dominic.schuhmacher.name/papers/ospa.pdf
 
         """
-        scores = [score_craters_on_patch(t, p, self.cut_off, self.minipatch)
+        scores = [ospa_single(t, p, self.cut_off, self.minipatch)
                   for t, p in zip(y_true, y_pred)]
         weights = [len(t) for t in y_true]
         return np.average(scores, weights=weights)

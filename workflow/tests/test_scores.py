@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 
 from ..scores import precision, recall, mad_radius, mad_center
-from ..scores.ospa import ospa_single, score_craters_on_patch
+from ..scores.ospa import ospa_single
 from ..scores.scp import scp_single
 
 x = [(1, 1, 1)]
@@ -32,41 +32,20 @@ def test_mask_detection():
     assert scp_single([], [], shape) == (0, 0, 0)
 
 
-def test_score_craters_on_patch():
+def test_ospa_single():
     # Perfect match
-    assert score_craters_on_patch(x, x) == 0
+    assert ospa_single(x, x) == 0
     # No match
-    assert score_craters_on_patch(x, y) == 1
-    assert score_craters_on_patch(x, x2) > 0
-    # 1 match, 1 miss
-    assert score_craters_on_patch(x, z) == 0.5
-    # 1 empty, 1 not
-    assert score_craters_on_patch(x, []) == 1
-    assert score_craters_on_patch([], x) == 1
-    # 2 empty arrays
-    assert score_craters_on_patch([], []) == 0
-
-
-def test_ospa():
-    x_arr = np.array(x).T
-    x2_arr = np.array(x2).T
-    y_arr = np.array(y).T
-    z_arr = np.array(z).T
-    empty_arr = np.atleast_2d([]).T
-
-    # Match
-    assert ospa_single(x_arr, x_arr) == 0
+    assert ospa_single(x, y) == 1
+    assert ospa_single(x, x2) > 0
     # Miss or wrong radius
-    assert ospa_single(x_arr, y_arr) == 1
-    assert ospa_single(x_arr, x2_arr) > 0
-    # One match, one miss
-    assert ospa_single(x_arr, z_arr) - 0.5 < 1e-6
+    assert ospa_single(x, z) == 0.5
     # An empty array with a non empty one
-    assert ospa_single(x_arr, empty_arr) == 1
-    assert ospa_single(empty_arr, x_arr) == 1
-    assert ospa_single(z_arr, empty_arr) == 1
+    assert ospa_single(x, []) == 1
+    assert ospa_single([], x) == 1
+    assert ospa_single(z, []) == 1
     # Two empty arrays should match
-    assert ospa_single(empty_arr, empty_arr) == 0
+    assert ospa_single([], []) == 0
 
 
 def test_precision_recall():
