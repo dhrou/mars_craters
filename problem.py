@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import rampwf as rw
@@ -30,8 +31,8 @@ def get_cv(folder_X, y):
 
 
 def _read_data(path, f_name):
-    src = np.load('data/images_quad_77.npy', mmap_mode='r')
-    labels = pd.read_csv("data/quad77_labels.csv")
+    src = np.load(os.path.join(path, 'data', 'images_quad_77.npy'))
+    labels = pd.read_csv(os.path.join(path, 'data', 'quad77_labels.csv'))
 
     # convert the dataframe with crater positions to list of
     # list of (x, y, radius) tuples (list of arrays of shape (n, 3) with n
