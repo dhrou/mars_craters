@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import rampwf as rw
-
+from sklearn.model_selection import ShuffleSplit
 
 problem_title = 'Mars craters detection and classification'
 # A type (class) which will be used to create wrapper objects for y_pred
@@ -21,13 +21,9 @@ score_types = [
 ]
 
 
-def get_cv(folder_X, y):
-    # _, X = folder_X
-    # cv = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=57)
-    # return cv.split(X, y)
-
-    # for now dummy CV that has one fold with all data for both train/valid
-    return [(slice(None), slice(None)), ]
+def get_cv(X, y):
+    cv = ShuffleSplit(n_splits=1, test_size=0.1, random_state=57)
+    return cv.split(X, y)
 
 
 def _read_data(path, f_name):
@@ -48,8 +44,8 @@ def _read_data(path, f_name):
     n_cum = np.array(n_true_patches).cumsum()
 
     labels_array = labels[['x_p', 'y_p', 'radius_p']].values
-    y = [[tuple(x) for x in labels_array[i:j]] for i, j in
-         zip(n_cum[:-1], n_cum[1:])]
+    y = np.array([[tuple(x) for x in labels_array[i:j]] for i, j in
+         zip(n_cum[:-1], n_cum[1:])])
 
     # df = pd.read_csv(os.path.join(path, 'data', f_name))
     # X = df['id'].values
