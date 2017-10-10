@@ -28,13 +28,13 @@ def score_craters_on_patch(y_true, y_pred, cut_off=1, minipatch=None):
     return score
 
 
-def ospa_single(x_arr, y_arr, cut_off=1, minipatch=None):
+def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
     """
     OSPA score on single patch. See docstring of `ospa` for more info.
 
     Parameters
     ----------
-    x_arr, y_arr : ndarray of shape (3, x)
+    y_true, y_pred : ndarray of shape (3, x)
         arrays of (x, y, radius)
     cut_off : float, optional (default is 1)
         penalizing value for wrong cardinality
@@ -46,14 +46,14 @@ def ospa_single(x_arr, y_arr, cut_off=1, minipatch=None):
     float: distance between input arrays
 
     """
-    x_size = x_arr.size
-    y_size = y_arr.size
+    x_size = y_true.size
+    y_size = y_pred.size
 
-    _, m = x_arr.shape
-    _, n = y_arr.shape
+    _, m = y_true.shape
+    _, n = y_pred.shape
 
     if m > n:
-        return ospa_single(y_arr, x_arr, cut_off)
+        return ospa_single(y_pred, y_true, cut_off, minipatch)
 
     # NO CRATERS
     # ----------
@@ -69,16 +69,16 @@ def ospa_single(x_arr, y_arr, cut_off=1, minipatch=None):
     if minipatch is not None:
         row_min, row_max, col_min, col_max = minipatch
 
-        x_arr_cut = ((x_arr[0] >= col_min) & (x_arr[0] < col_max) &
-                     (x_arr[1] >= row_min) & (x_arr[1] < row_max))
-        y_arr_cut = ((y_arr[0] >= col_min) & (y_arr[0] < col_max) &
-                     (y_arr[1] >= row_min) & (y_arr[1] < row_max))
+        y_true_cut = ((y_true[0] >= col_min) & (y_true[0] < col_max) &
+                      (y_true[1] >= row_min) & (y_true[1] < row_max))
+        y_pred_cut = ((y_pred[0] >= col_min) & (y_pred[0] < col_max) &
+                      (y_pred[1] >= row_min) & (y_pred[1] < row_max))
 
-        x_arr = x_arr[x_arr_cut]
-        y_arr = y_arr[y_arr_cut]
+        y_true = y_true[y_true_cut]
+        y_pred = y_pred[y_pred_cut]
 
     # OSPA METRIC
-    _, _, ious = _match_tuples(x_arr.T.tolist(), y_arr.T.tolist())
+    _, _, ious = _match_tuples(y_true.T.tolist(), y_pred.T.tolist())
     iou_score = ious.sum()
 
     distance_score = m - iou_score
