@@ -4,6 +4,7 @@ import numpy as np
 
 from .detection_base import DetectionBaseScoreType
 from .precision_recall import _match_tuples
+from .precision_recall import _select_minipatch_tuples
 
 
 def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
@@ -30,9 +31,6 @@ def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
     n_max = max(n_true, n_pred)
     n_min = min(n_true, n_pred)
 
-    # if m > n:
-        # return ospa_single(y_pred, y_true, cut_off, minipatch)
-
     # No craters and none found
     if n_true == 0 and n_pred == 0:
         return 0
@@ -43,7 +41,14 @@ def ospa_single(y_true, y_pred, cut_off=1, minipatch=None):
 
     # OSPA METRIC
     id_true, id_pred, ious = _match_tuples(y_true, y_pred)
-    iou_score = ious.sum()
+
+    if minipatch is not None:
+        true_in_minipatch = _select_minipatch_tuples(y_true[id_true])
+        pred_in_minipatch = _select_minipatch_tuples(y_pred[id_pred])
+        is_valid = true_in_minipatch & pred_in_minipatch
+        iou_score = ious[is_valid].sum()
+    else:
+        iou_score = ious.sum()
 
     distance_score = n_min - iou_score
     cardinality_score = cut_off * (n_max - n_min)
