@@ -9,4 +9,6 @@ class ObjectDetector:
         return self
 
     def predict(self, X):
-        return np.array([[(1.0, 112.0, 112.0, 112.0)] for img in X])
+        y_pred = np.empty(len(X), dtype=np.object)
+        y_pred[:] = [[(1.0, 112.0, 112.0, 112.0)] for img in X]
+        return y_pred
